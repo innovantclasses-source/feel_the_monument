@@ -33,17 +33,39 @@ with col2:
 
     if generate and uploaded and monument:
         from depth_engine_small import generate_depth_map
-        st.write("step 1: depth engine imported")
+        from stl_generator import depth_to_bas_relief, depth_to_lithophane
 
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
                 tmp.write(uploaded.read())
                 tmp_path = tmp.name
-            st.write("step 2: file written")
 
             depth = generate_depth_map(tmp_path)
             os.unlink(tmp_path)
-            st.write(f"step 3: depth map generated, shape: {depth.shape}")
+            st.write(f"depth map shape: {depth.shape}")
+
+            out_dir = tempfile.mkdtemp()
+            name_safe = monument.replace(" ", "_")
+
+            bas_path = os.path.join(out_dir, name_safe + "_bas_relief.stl")
+            depth_to_bas_relief(depth, bas_path,
+                base_mm=base_mm, relief_mm=relief_mm,
+                width_mm=width_mm, smooth=smooth)
+            st.write("bas relief generated")
+
+            lit_path = os.path.join(out_dir, name_safe + "_lithophane.stl")
+            depth_to_lithophane(depth, lit_path, width_mm=width_mm)
+            st.write("lithophane generated")
+
+            st.success("STL files ready!")
+
+            col_a, col_b = st.columns(2)
+            with open(bas_path, "rb") as f:
+                col_a.download_button("Download Bas-Relief STL", f,
+                    file_name=name_safe + "_bas_relief.stl")
+            with open(lit_path, "rb") as f:
+                col_b.download_button("Download Lithophane STL", f,
+                    file_name=name_safe + "_lithophane.stl")
 
         except Exception as e:
             st.error(f"Error: {str(e)}")
