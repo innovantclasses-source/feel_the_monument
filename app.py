@@ -1,2 +1,8 @@
 import streamlit as st
-st.write("hello world")
+import cv2
+import numpy as np
+import scipy
+import trimesh
+import qrcode
+from PIL import Image
+st.write("all imports ok")
