@@ -1,0 +1,10 @@
+streamlit
+torch==2.3.0
+torchvision==0.18.0
+opencv-python-headless
+numpy
+scipy
+Pillow
+trimesh
+qrcode[pil]
+timm
