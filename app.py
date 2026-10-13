@@ -45,7 +45,7 @@ with col1:
 
 with col2:
     if uploaded:
-        st.image(uploaded, use_column_width=True)
+        st.image(uploaded)
 
     if generate and uploaded and monument:
         with st.spinner("Running depth AI model..."):
