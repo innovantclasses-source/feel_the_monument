@@ -1,10 +1,7 @@
 streamlit
-torch
-torchvision
 opencv-python-headless
 numpy
 scipy
 Pillow
 trimesh
 qrcode[pil]
-timm
