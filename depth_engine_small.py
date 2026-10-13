@@ -1,31 +1,29 @@
-import torch
 import cv2
 import numpy as np
+from PIL import Image
 
 
 def generate_depth_map(image_path):
-    torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
-
-    model = torch.hub.load('intel-isl/MiDaS', 'MiDaS_small', trust_repo=True)
-    device = torch.device('cpu')
-    model.to(device).eval()
-
-    transforms = torch.hub.load('intel-isl/MiDaS', 'transforms', trust_repo=True)
-    transform = transforms.small_transform
-
     img = cv2.imread(image_path)
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    input_batch = transform(img_rgb).to(device)
-    with torch.no_grad():
-        prediction = model(input_batch)
-        prediction = torch.nn.functional.interpolate(
-            prediction.unsqueeze(1),
-            size=img_rgb.shape[:2],
-            mode='bicubic',
-            align_corners=False,
-        ).squeeze()
+    # Blur to reduce noise
+    blurred = cv2.GaussianBlur(gray, (21, 21), 0)
 
-    depth = prediction.cpu().numpy()
+    # Use Laplacian for edge-aware depth approximation
+    laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
+    laplacian = np.abs(laplacian)
+
+    # Combine with luminance-based depth cue
+    # Brighter areas are typically foreground in monument photos
+    luminance = gray.astype(np.float64)
+
+    # Weighted combination
+    depth = 0.6 * luminance + 0.4 * laplacian
+
+    # Smooth the result
+    depth = cv2.GaussianBlur(depth.astype(np.float32), (15, 15), 0)
+
+    # Normalise to 0-1
     depth = (depth - depth.min()) / (depth.max() - depth.min())
     return depth.astype('float32')
